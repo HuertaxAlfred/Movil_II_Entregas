@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Interfaz principal de la app -->
+    <!-- Dos cajas una numero de celular, mensaje a redactar y botón de salvar -->
+
+    <EditText
+        android:id="@+id/etPhoneNumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Número de teléfono"
+        android:minHeight="48dp"
+        android:padding="8dp" />
+
+
+    <EditText
+        android:id="@+id/etAutoReplyMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Mensaje automático"
+        android:inputType="textMultiLine"
+        android:minLines="3"
+        android:gravity="top|start" />
+
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Guardar" />
+
+</LinearLayout>
