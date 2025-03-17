@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
      * Imprimir todo el contenido de la base de datos
      */
     private fun imprimirDatosDeLaBD() {
-        CoroutineScope(Dispatchers.IO).launch {  // 🔥 Ejecutar en un hilo de fondo
+        CoroutineScope(Dispatchers.IO).launch {  //Ejecutar en un hilo de fondo
             val datos = exchangeRateUpdateDao.getAllRates()
             datos.forEach {
                 val fechaLegible = convertUnixTimestampToDate(it.time_last_update_unix)
