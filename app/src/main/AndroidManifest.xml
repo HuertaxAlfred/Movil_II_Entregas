@@ -2,8 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Se permitio el acceso a internet aqui -->
+    <!-- Se permite el acceso a internet aqui -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Permisos para acceder al almacenamiento (Como tal a la base de datos) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
 
     <!-- Resto de la app -->
     <application
@@ -26,6 +29,32 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--Registro de mi content provider -->
+
+
+        <provider
+            android:name=".ENTIDADES.ContentProvider"
+            android:authorities="com.example.divisasroom.provider"
+            android:exported="true"
+            android:grantUriPermissions="true" />
+
+        <!--
+        <provider
+            android:name="com.example.divisasroom.ENTIDADES.ContentProvider"
+            android:authorities="com.example.divisasroom.provider"
+            android:exported="true"
+            android:grantUriPermissions="true" />
+            -->
+
+
+        <!-- <provider
+            android:name=".ExchangeRatesProvider"
+            android:authorities="com.example.divisasroom.provider"
+            android:readPermission="com.example.divisasroom.PERMISSION_READ" - - - - - - - - - - QUITAR ESTO: PERMISOS DE SOLO LECTURA
+            android:writePermission="com.example.divisasroom.PERMISSION_WRITE"
+            /> -->
+
     </application>
 
 </manifest>

@@ -1,98 +1,112 @@
 package com.example.divisasroom.WORKER
+
 import android.content.Context
+import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import android.util.Log
-import com.example.divisasroom.DB.DBPruebas
+import com.example.divisasroom.DAOS.ExchangeRateDao
+import com.example.divisasroom.DB.AppDatabase
 import com.example.divisasroom.ENTIDADES.Currency
-import com.example.divisasroom.ENTIDADES.ExchangeRateUpdate
+import com.example.divisasroom.ENTIDADES.ExchangeRateHistory
 import com.example.divisasroom.RETROFIT.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
-//Worker que utiliza WorkManager para realizar tareas
-// en segundo plano relacionadas con la sincronización de tasas de cambio de divisas.
 class SyncExchangeRatesWorker(appContext: Context, workerParams: WorkerParameters) :
     Worker(appContext, workerParams) {
 
-    private val db = DBPruebas.getDatabase(appContext)  // Inicializar la base de datos dentro del Worker
-    private val currencyDao = db.currencyDao()  // Inicializar currencyDao
-    private val exchangeRateUpdateDao = db.exchangeRateUpdateDao()  // Inicializar exchangeRateUpdateDao
-    private val TAG = "SyncExchangeRatesWorker" //Nombre del worker
+    private val TAG = "SyncExchangeRatesWorker"
+    private val db = AppDatabase.getDatabase(appContext)
+    private val dao: ExchangeRateDao = db.exchangeRateDao()
 
-    //Metodo principal que WorkManager ejecutará cuando se inicie el worker.
     override fun doWork(): Result {
-        // Agregar un log al inicio del trabajo
-        Log.d(TAG, "SyncExchangeRatesWorker iniciado")
+        Log.d(TAG, "Iniciando sincronizacion de tasas de cambio...")
         return try {
-            // Ejecutar la lógica de sincronización dentro de una corrutina
-            val result = runBlocking { // Iniciamos una corrutina aquí
-                //Este metodo es el que realiza una solicitud a una API externa
-                syncExchangeRates() // Llamada a la función suspendida
+            val result = runBlocking {
+                syncExchangeRates()
             }
-            // Si todo va bien, devolver éxito
-            if (result) {
+            if (result)
                 Result.success()
-            } else {
+            else
                 Result.failure()
-            }
         } catch (e: Exception) {
-            Log.e("SyncExchangeRatesWorker", "Error al sincronizar las divisas", e)
+            Log.e(TAG, "Error al sincronizar las tasas de cambio", e)
             Result.failure()
         }
     }
 
     private suspend fun syncExchangeRates(): Boolean {
         return try {
-            val apiKey = "9af70ebaf64e2aabfb1e8f2b"
-            //Esta solicitud es asíncrona y se espera que devuelva una respuesta, que se guarda en la variable response
+            val apiKey = "4afa1d38b0e3c0cd16571cd8"
             val response = RetrofitInstance.api.getExchangeRates(apiKey)
-            Log.d("SyncExchangeRatesWorker", "Respuesta completa: $response")
 
-            // Verificar si conversion_rates está vacío o nulo
-            if (response.conversion_rates.isNullOrEmpty()) {
-                Log.e("SyncExchangeRatesWorker", "Rates es nulo o vacio.")
+            if (response.conversion_rates.isEmpty()) {
+                Log.e(TAG, "No se recibieron tasas de cambio de la API.")
                 return false
-            } else {
-                // Si hay datos en conversion_rates, procesarlos
-                val currencies = response.conversion_rates.map { (code, rate) ->
-                    Currency(code = code, rate = rate)
-                }
-
-                // Insertar las divisas en la base de datos
-                //Asegura que la operación de inserción en la base de datos se realice en un hilo
-                // de trabajo adecuado para tareas de entrada/salida, evitando que el hilo principal
-                // (UI thread) se bloquee mientras se realiza la operación.
-                withContext(Dispatchers.IO) {
-                    currencyDao.insertCurrencies(currencies)
-                }
-
-                // Crear el objeto ExchangeRateUpdate para guardar la información de actualización
-                val exchangeRateUpdate = ExchangeRateUpdate(
-                    baseCode = response.base_code,
-                    last_update_unix = response.time_last_update_unix,
-                    next_update_unix = response.time_next_update_unix
-                )
-
-                // Insertar o actualizar la información en la base de datos
-                withContext(Dispatchers.IO) {
-                    exchangeRateUpdateDao.insertUpdate(exchangeRateUpdate)
-                }
-
-                // Mostrar las divisas guardadas y la última actualización en el Log
-                val savedCurrencies = currencyDao.getAllCurrencies()
-                savedCurrencies.forEach {
-                    Log.d("SyncExchangeRatesWorker", "Divisa: ${it.code}, Tasa: ${it.rate}")
-                }
-                val lastUpdate = exchangeRateUpdateDao.getLastUpdate()
-                Log.d("SyncExchangeRatesWorker", "Ultima actualizacion: $lastUpdate")
-                //Todo se completo con exito regresa true
-                true
             }
+
+            val lastUpdateUnix = response.time_last_update_unix // Timestamp UTC
+            val lastUpdateIso = unixToIso8601(lastUpdateUnix)  // Convertir a ISO 8601 (UTC)
+
+            // Verificar si ya hay un registro con este timestamp
+            val existingRecords = withContext(Dispatchers.IO) {
+                dao.getCountByTimestamp(lastUpdateUnix)
+            }
+
+            if (existingRecords > 0) {
+                Log.d(
+                    TAG,
+                    "¡YA existen registros para esta hora ($lastUpdateIso)!, no se insertaran datos duplicados."
+                )
+                return true // No hacer nada si ya existen registros en esa hora
+            }
+
+            // Insertar las divisas en la tabla `currency`
+            val currencies = response.conversion_rates.keys.map { code ->
+                Currency(code = code, name = code) // Usa el código como nombre temporal
+            }
+            withContext(Dispatchers.IO) {
+                dao.insertCurrencies(currencies)
+            }
+
+            /**
+             * Insertar tasas de cambio en la tabla `exchange_rate_history`
+             * que es la nueva que permite el historial de las divisas
+             */
+            val exchangeRates = response.conversion_rates.map { (code, rate) ->
+                ExchangeRateHistory(
+                    currency_code = code,
+                    rate = rate,
+                    time_last_update_unix = lastUpdateUnix, //Guardar en UTC
+                    time_last_update_iso = lastUpdateIso,   //Guardar en formato legible ISO 8601
+                    base_code = response.base_code
+                )
+            }
+            withContext(Dispatchers.IO) {
+                dao.insertExchangeRates(exchangeRates)
+            }
+
+            Log.d(
+                TAG,
+                "Sincronizacion completada. ${exchangeRates.size} tasas de cambio insertadas en la base de datos."
+            )
+            true
         } catch (e: Exception) {
-            Log.e("SyncExchangeRatesWorker", "Error al obtener las divisas", e)
+            Log.e(TAG, "Error al obtener e insertar tasas de cambio", e)
             false
         }
+    }
+
+    /**
+     * 🔹 Convierte un timestamp UNIX (UTC) a formato ISO 8601 (UTC).
+     */
+    private fun unixToIso8601(timestamp: Long): String {
+        return Instant.ofEpochSecond(timestamp)
+            .atZone(ZoneId.of("UTC")) //Mantener en UTC
+            .format(DateTimeFormatter.ISO_INSTANT) //"2025-03-11T04:00:00Z"
     }
 }

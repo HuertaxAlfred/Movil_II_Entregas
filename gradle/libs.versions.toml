@@ -15,6 +15,11 @@ kotlinxCoroutines = "0.19.2"
 kotlinxCoroutinesAndroid = "1.10.1"
 converterGson = "2.11.0"
 workRuntimeKtx = "2.10.0"
+workGcm = "2.10.0"
+media3CommonKtx = "1.5.1"
+cronetEmbedded = "119.6045.31"
+mpandroidchart = "v3.1.0"
+composeCharts = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +43,11 @@ kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlin" }
 converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-work-gcm = { group = "androidx.work", name = "work-gcm", version.ref = "workGcm" }
+androidx-media3-common-ktx = { group = "androidx.media3", name = "media3-common-ktx", version.ref = "media3CommonKtx" }
+cronet-embedded = { group = "org.chromium.net", name = "cronet-embedded", version.ref = "cronetEmbedded" }
+mpandroidchart = { group = "com.github.PhilJay", name = "MPAndroidChart", version.ref = "mpandroidchart" }
+compose-charts = { group = "com.github.compose-charts", name = "compose-charts", version.ref = "composeCharts" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

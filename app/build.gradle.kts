@@ -60,6 +60,9 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.work.gcm)
+    implementation(libs.androidx.media3.common.ktx)
+    //implementation(libs.cronet.embedded)
     //Para implementar room
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
