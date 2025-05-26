@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "162696474870",
+    "project_id": "fcmproyectowpf",
+    "storage_bucket": "fcmproyectowpf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:162696474870:android:71f8677e15b992318dfcd7",
+        "android_client_info": {
+          "package_name": "com.example.firebasenotifi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlPq9XDjs_PKrUMOkI0rnwlQptl3MgZsA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
